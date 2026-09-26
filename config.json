@@ -1,0 +1,6 @@
+{
+    "server_url": "http://serverip:port",
+    "save_streams": true,
+    "save_only_streams": false,
+    "cfx_token": ""
+}
