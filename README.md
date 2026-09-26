@@ -5,7 +5,7 @@
 
 [🇵🇹 Português](#-português) • [🇬🇧 English](#-english)
 
-> ⚠️ **Aviso:** Utilize esta ferramenta apenas em servidores próprios ou em servidores onde tenha autorização para realizar o dump. O uso indevido pode violar os termos de serviço do FiveM/Cfx.re.
+> ⚠️ **Aviso:** O uso indevido pode violar os termos de serviço do FiveM/Cfx.re.
 
 ---
 
