@@ -252,9 +252,8 @@ Esta ferramenta é disponibilizada para **fins educativos, de desenvolvimento e 
 
 Utilize-a apenas em:
 
-* Servidores que sejam seus;
+* Qualquer servidor que você queira;
 * Ambientes de desenvolvimento;
-* Servidores onde tenha autorização explícita para realizar estas operações.
 
 O utilizador é responsável pela utilização que fizer desta ferramenta. O uso não autorizado de recursos de terceiros poderá violar direitos de autor, termos de serviço ou outras regras aplicáveis.
 
@@ -264,9 +263,8 @@ This tool is provided for **educational, development and testing purposes**.
 
 Only use it on:
 
-* Servers that you own;
+* Any server that you want;
 * Development environments;
-* Servers where you have explicit permission to perform these operations.
 
 The user is responsible for how this tool is used. Unauthorized extraction of third-party resources may violate copyright, terms of service, or other applicable rules.
 
