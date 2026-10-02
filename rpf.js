@@ -12,21 +12,13 @@ class RagePackfile {
         this.handles = new Array(128).fill(null);
     }
 
-    /**
-     * Open and parse a Rage packfile (RPF2)
-     * @param {string} archivePath - Path to the RPF archive
-     * @returns {Promise<boolean>} Success status
-     */
     async openArchive(archivePath) {
         try {
-            // Open the file
             this.fileHandle = await fs.open(archivePath, 'r');
 
-            // Read the header (20 bytes)
             const headerBuffer = Buffer.alloc(20);
             await this.fileHandle.read(headerBuffer, 0, 20, 0);
 
-            // Parse header
             this.header = {
                 magic: headerBuffer.readUInt32LE(0),
                 tocSize: headerBuffer.readUInt32LE(4),
@@ -35,17 +27,14 @@ class RagePackfile {
                 cryptoFlag: headerBuffer.readUInt32LE(16)
             };
 
-            // Verify magic (RPF2 = 0x32465052)
             if (this.header.magic !== 0x32465052) {
                 throw new Error('Invalid magic (not RPF2)');
             }
 
-            // Check if encrypted
             if (this.header.cryptoFlag !== 0) {
                 throw new Error('Only non-encrypted RPF2 is supported');
             }
 
-            // Read TOC (Table of Contents) starting at offset 2048
             const tocBuffer = Buffer.alloc(this.header.tocSize);
             await this.fileHandle.read(tocBuffer, 0, this.header.tocSize, 2048);
 
@@ -65,7 +54,6 @@ class RagePackfile {
                 this.entries.push(entry);
             }
 
-            // Copy name table
             this.nameTable = Buffer.from(tocBuffer.subarray(entryTableSize));
 
             return true;
@@ -79,66 +67,51 @@ class RagePackfile {
         }
     }
 
-    /**
-     * Find an entry by path
-     * @param {string} path - File path
-     * @returns {object|null} Entry object or null
-     */
+
     findEntry(path) {
-        // Remove path prefix
         let relativePath = path;
         if (this.pathPrefix && path.startsWith(this.pathPrefix)) {
             relativePath = path.substring(this.pathPrefix.length);
         }
 
-        // Start at root
         let entry = this.entries[0];
 
-        // Handle root path
         if (!relativePath || relativePath === '/' || relativePath === '') {
             return entry;
         }
 
         let pos = 0;
 
-        // Skip leading slashes
         while (relativePath[pos] === '/') {
             pos++;
         }
 
-        // If only slashes, return root
         if (pos >= relativePath.length) {
             return entry;
         }
 
         let nextPos = relativePath.indexOf('/', pos);
 
-        // Traverse the directory tree
         while (true) {
             if (!entry) {
                 return null;
             }
 
-            // If this is a directory
             if (entry.isDirectory) {
                 const key = nextPos === -1
                     ? relativePath.substring(pos)
                     : relativePath.substring(pos, nextPos);
 
-                // Return directory if key is empty
                 if (key === '') {
                     return entry;
                 }
 
-                // Binary search in directory entries
                 entry = this._binarySearchEntry(entry, key);
 
-                // Fallback to case-insensitive linear search
                 if (!entry) {
                     entry = this._linearSearchEntry(this.entries[0], key);
                 }
             } else {
-                // File entry found
                 return entry;
             }
 
@@ -148,7 +121,6 @@ class RagePackfile {
 
             pos = nextPos + 1;
 
-            // Skip additional slashes
             while (relativePath[pos] === '/') {
                 pos++;
             }
@@ -161,10 +133,6 @@ class RagePackfile {
         }
     }
 
-    /**
-     * Binary search for entry in directory
-     * @private
-     */
     _binarySearchEntry(dirEntry, key) {
         let left = 0;
         let right = dirEntry.length - 1;
@@ -187,10 +155,6 @@ class RagePackfile {
         return null;
     }
 
-    /**
-     * Case-insensitive linear search
-     * @private
-     */
     _linearSearchEntry(dirEntry, key) {
         if (!dirEntry || !dirEntry.isDirectory) {
             return null;
@@ -200,7 +164,6 @@ class RagePackfile {
         const startIdx = dirEntry.dataOffset;
         const endIdx = startIdx + dirEntry.length;
 
-        // Bounds check
         if (startIdx >= this.entries.length || endIdx > this.entries.length) {
             return null;
         }
@@ -219,10 +182,6 @@ class RagePackfile {
         return null;
     }
 
-    /**
-     * Get entry name from name table
-     * @private
-     */
     _getEntryName(entry) {
         let end = entry.nameOffset;
         while (end < this.nameTable.length && this.nameTable[end] !== 0) {
@@ -231,11 +190,6 @@ class RagePackfile {
         return this.nameTable.toString('utf8', entry.nameOffset, end);
     }
 
-    /**
-     * Read file contents
-     * @param {string} fileName - File path
-     * @returns {Promise<Buffer|null>} File contents or null
-     */
     async readFile(fileName) {
         const entry = this.findEntry(fileName);
 
@@ -249,11 +203,6 @@ class RagePackfile {
         return buffer;
     }
 
-    /**
-     * List directory contents
-     * @param {string} folderPath - Directory path
-     * @returns {Array<object>} Array of entry objects with name, isDirectory, and length
-     */
     listDirectory(folderPath) {
         const entry = this.findEntry(folderPath);
 
@@ -263,7 +212,6 @@ class RagePackfile {
 
         const results = [];
 
-        // Check if dataOffset + length would exceed entries array
         const startIdx = entry.dataOffset;
         const endIdx = startIdx + entry.length;
 
@@ -287,37 +235,20 @@ class RagePackfile {
         return results;
     }
 
-    /**
-     * Check if file exists
-     * @param {string} fileName - File path
-     * @returns {boolean} True if exists
-     */
     exists(fileName) {
         const entry = this.findEntry(fileName);
         return entry !== null;
     }
 
-    /**
-     * Get file length
-     * @param {string} fileName - File path
-     * @returns {number} File length or -1
-     */
     getLength(fileName) {
         const entry = this.findEntry(fileName);
         return entry ? entry.length : -1;
     }
 
-    /**
-     * Set path prefix for relative paths
-     * @param {string} prefix - Path prefix
-     */
     setPathPrefix(prefix) {
         this.pathPrefix = prefix.replace(/\/+$/, '');
     }
 
-    /**
-     * Close the archive
-     */
     async close() {
         if (this.fileHandle) {
             await this.fileHandle.close();
@@ -325,11 +256,6 @@ class RagePackfile {
         }
     }
 
-    /**
-     * Get all files recursively
-     * @param {string} path - Starting path (default: root)
-     * @returns {Array<string>} Array of file paths
-     */
     getAllFiles(path = '/') {
         const files = [];
         const entry = this.findEntry(path);
